@@ -24,6 +24,9 @@
     // Default DFP jQuery selector
     var dfpSelector = '.adunit';
 
+    // DFP options object
+    var dfpOptions = {};
+
     /**
      * Init function sets required params and loads Google's DFP script
      * @param  String id       The DFP account ID
@@ -35,24 +38,28 @@
         dfpID = id || dfpID;
         dfpSelector = selector || dfpSelector;
         options = options || {};
-        dfpLoader();
-        $(function () { createAds(options); });
+
+        setOptions(options);
+
+        if(dfpOptions.targetPlatform === 'mobile') {
+            dfpMobileLoader();
+        } else {
+            dfpLoader();
+            $(function () { createAds(); });
+        }
 
     };
 
     /**
-     * Main function to find and create all Ads
+     * Set the options for DFP
      * @param Object options Custom options to apply
      */
-    var createAds = function (options) {
-
-        // Array to Store AdUnits
-        var adUnitArray = [];
+    var setOptions = function(options) {
 
         // Default DFP options
         var URLTargets = getURLTargets();
 
-        var dfpOptions = {
+        dfpOptions = {
             'setTargeting': {
                 'inURL': URLTargets.inURL,
                 'URLIs': URLTargets.URLIs,
@@ -60,7 +67,8 @@
                 'Domain': window.location.host
             },
             'enableSingleRequest': true,
-            'collapseEmptyDivs': 'original'
+            'collapseEmptyDivs': 'original',
+            'targetPlatform': 'web'
         };
 
         // Make sure the default setTargeting is not lost in the object merge
@@ -70,6 +78,16 @@
 
         // Merge options objects
         dfpOptions = $.extend(dfpOptions, options);
+
+    };
+
+    /**
+     * Main function to find and create all Ads
+     */
+    var createAds = function () {
+
+        // Array to Store AdUnits
+        var adUnitArray = [];
 
         // Loops through on page Ad units and gets ads for them.
         $(dfpSelector).each(function () {
@@ -307,6 +325,24 @@
         if (gads.style.display === 'none') {
             dfpBlocked();
         }
+
+    };
+
+    /**
+     * This is called when mobile ads are to be loaded.
+     */
+    var dfpMobileLoader = function() {
+
+        window.googletag = window.googletag || {};
+        window.googletag.cmd = window.googletag.cmd || [];
+
+        var useSSL = 'https:' == document.location.protocol;
+        var src = (useSSL ? 'https:' : 'http:') +
+        '//www.googletagservices.com/tag/js/gpt_mobile.js';
+
+        $.getScript(src, function() {
+            $(function () { createAds(); });
+        });
 
     };
 
