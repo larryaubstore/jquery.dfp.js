@@ -1,5 +1,5 @@
 /**
- * jQuery DFP v1.0.6
+ * jQuery DFP v1.1.0
  * http://github.com/coop182/jquery.dfp.js
  *
  * Copyright 2013 Matt Cooper
@@ -27,6 +27,9 @@
     // DFP options object
     var dfpOptions = {};
 
+    // Write content for document.write
+    var writeContext = 'head';
+
     /**
      * Init function sets required params and loads Google's DFP script
      * @param  String id       The DFP account ID
@@ -40,13 +43,8 @@
         options = options || {};
 
         setOptions(options);
-
-        if(dfpOptions.targetPlatform === 'mobile') {
-            dfpMobileLoader();
-        } else {
-            dfpLoader();
-            $(function () { createAds(); });
-        }
+        dfpLoader();
+        $(function () { createAds(); });
 
     };
 
@@ -54,11 +52,12 @@
      * Set the options for DFP
      * @param Object options Custom options to apply
      */
-    var setOptions = function(options) {
+    var setOptions = function (options) {
 
-        // Default DFP options
+        // Get URL Targeting
         var URLTargets = getURLTargets();
 
+        // Set default options
         dfpOptions = {
             'setTargeting': {
                 'inURL': URLTargets.inURL,
@@ -68,7 +67,8 @@
             },
             'enableSingleRequest': true,
             'collapseEmptyDivs': 'original',
-            'targetPlatform': 'web'
+            'targetPlatform': 'web',
+            'enableSyncRendering': false
         };
 
         // Make sure the default setTargeting is not lost in the object merge
@@ -113,6 +113,9 @@
 
             // Store AdUnits
             adUnitArray.push(adUnitID);
+
+            // Set document.write context
+            writeContext = '#' + adUnitID;
 
             // Push commands to DFP to create ads
             window.googletag.cmd.push(function () {
@@ -174,6 +177,11 @@
             });
             if (dfpOptions.collapseEmptyDivs === true || dfpOptions.collapseEmptyDivs === 'original') {
                 window.googletag.pubads().collapseEmptyDivs();
+            }
+            if (dfpOptions.enableSyncRendering === true) {
+                window.googletag.pubads().enableSyncRendering();
+            } else {
+                window.googletag.pubads().enableAsyncRendering();
             }
             window.googletag.enableServices();
 
@@ -303,46 +311,69 @@
      */
     var dfpLoader = function () {
 
+        window.console.log('In loader');
+
         window.googletag = window.googletag || {};
         window.googletag.cmd = window.googletag.cmd || [];
 
-        var gads = document.createElement('script');
-        gads.async = true;
-        gads.type = 'text/javascript';
+        if (dfpOptions.targetPlatform === 'web') {
 
-        // Adblock blocks the load of Ad scripts... so we check for that
-        gads.onerror = function () {
-            dfpBlocked();
-        };
+            window.console.log('In web loader');
 
-        var useSSL = 'https:' === document.location.protocol;
-        gads.src = (useSSL ? 'https:' : 'http:') +
-        '//www.googletagservices.com/tag/js/gpt.js';
-        var node = document.getElementsByTagName('script')[0];
-        node.parentNode.insertBefore(gads, node);
+            if (dfpOptions.enableSyncRendering === false) {
 
-        // Adblock plus seems to hide blocked scripts... so we check for that
-        if (gads.style.display === 'none') {
-            dfpBlocked();
+                window.console.log('In async web loader');
+
+                var gads = document.createElement('script');
+                gads.async = true;
+                gads.type = 'text/javascript';
+
+                // Adblock blocks the load of Ad scripts... so we check for that
+                gads.onerror = function () {
+                    dfpBlocked();
+                };
+
+                var useSSL = 'https:' === document.location.protocol;
+                gads.src = (useSSL ? 'https:' : 'http:') +
+                '//www.googletagservices.com/tag/js/gpt.js';
+                var node = document.getElementsByTagName('script')[0];
+                node.parentNode.insertBefore(gads, node);
+
+                // Adblock plus seems to hide blocked scripts... so we check for that
+                if (gads.style.display === 'none') {
+                    dfpBlocked();
+                }
+
+            } else {
+
+                window.console.log('In sync web loader');
+
+                window.document.write = function (str) {
+                    window.console.log(str);
+                    $(writeContext).append(str);
+                };
+
+                (function () {
+                    var useSSL = 'https:' === document.location.protocol;
+                    var src = (useSSL ? 'https:' : 'http:') +
+                    '//www.googletagservices.com/tag/js/gpt.js';
+                    window.document.write('<scr' + 'ipt src="' + src + '"></scr' + 'ipt>');
+                })();
+
+            }
+
+        } else {
+
+            window.console.log('In sync mobile loader');
+
+            (function () {
+                var useSSL = 'https:' === document.location.protocol;
+                var src = (useSSL ? 'https:' : 'http:') +
+                '//www.googletagservices.com/tag/js/gpt_mobile.js';
+                window.document.write('<scr' + 'ipt src="' + src + '"></scr' + 'ipt>');
+            })();
+
         }
-
-    };
-
-    /**
-     * This is called when mobile ads are to be loaded.
-     */
-    var dfpMobileLoader = function() {
-
-        window.googletag = window.googletag || {};
-        window.googletag.cmd = window.googletag.cmd || [];
-
-        var useSSL = 'https:' == document.location.protocol;
-        var src = (useSSL ? 'https:' : 'http:') +
-        '//www.googletagservices.com/tag/js/gpt_mobile.js';
-
-        $.getScript(src, function() {
-            $(function () { createAds(); });
-        });
 
     };
 
