@@ -183,9 +183,14 @@
                         display = 'block display-original';
                     }
 
+                    if (typeof dfpOptions.beforeEachAdLoaded === 'function') {
+                        dfpOptions.beforeEachAdLoaded.call(this, $adUnit);
+                    } 
                     $adUnit.removeClass('display-none').addClass('display-' + display);
 
-                    googleAdUnit.oldRenderEnded();
+                    if( typeof(googleAdUnit.oldRenderEnded) !== "undefined") {
+                        googleAdUnit.oldRenderEnded();
+                    }
 
                     // Excute afterEachAdLoaded callback if provided
                     if (typeof dfpOptions.afterEachAdLoaded === 'function') {
