@@ -167,6 +167,7 @@
                     });
                 }
 
+                debugger;
                 // The following hijacks an internal google method to check if the div has been
                 // collapsed after the ad has been attempted to be loaded.
                 googleAdUnit.oldRenderEnded = googleAdUnit.oldRenderEnded || googleAdUnit.renderEnded;
@@ -183,6 +184,10 @@
                         display = 'block display-original';
                     }
 
+                    debugger; 
+                    if (typeof dfpOptions.beforeEachAdLoaded === 'function') {
+                        dfpOptions.beforeEachAdLoaded.call(this, $adUnit);
+                    } 
                     $adUnit.removeClass('display-none').addClass('display-' + display);
 
                     googleAdUnit.oldRenderEnded();
@@ -480,6 +485,7 @@
             id = options.dfpID || dfpID;
         }
 
+        debugger;
         var selector = this;
 
         if (typeof this === 'function') {

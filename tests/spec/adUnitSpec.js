@@ -49,4 +49,44 @@ describe('Ad units', function () {
 
     });
 
+    it("Check if pre-render callback get called", function () {
+
+        var callback = {};
+        callback.beforeEachAdLoaded = function() {};
+        spyOn(callback, "beforeEachAdLoaded").andCallThrough();
+
+        var dummyTag = {};
+        dummyTag.enableServices = function () {
+
+        };
+
+
+
+        spyOn(dummyTag, "enableServices").andCallThrough();
+
+        runs(function () {
+            $('body').append('<div class="adunit" data-adunit="Leader"></div>');
+            $.dfp({
+                dfpID: 'xxxxxxx',
+                beforeEachAdLoaded: callback.beforeEachAdLoaded,
+                googletag: dummyTag
+            });
+        }, "Kick off loader");
+
+        waitsFor(function () {
+            return dummyTag.enableServices.callCount === 1;
+        }, "enableServices not called", 5000);
+
+        runs(function () {
+            var adUnitSelector = $('.adunit');
+            debugger;
+            expect(adUnitSelector.length).toEqual(1);
+            //expect(callback.beforeEachAdLoaded).toHaveBeenCalled();
+            //expect($('.adunit').data('googleAdUnit').A).toEqual('/xxxxxxx/Leader');
+        });
+
+    });
+
+
+
 });
