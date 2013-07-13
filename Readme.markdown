@@ -152,6 +152,11 @@ Available Options
         <td>afterAllAdsLoaded</td>
         <td>This is a call back function, see below for more information.</td>
     </tr>
+    <tr>
+        <td>customRenderEndedEnabled</td>
+        <td>'renderEnded' is a method called after the rendering. The google publisher tag API calls this method during the execution, but this callback is not officially supported. There is no guarantee that Google keeps always this method in future. By default, the option is set to true. If the option is set to false, the method 'renderEnded' is not overrided. The callbacks and the option 'collapseEmptyDivs' are not available when 'customRenderEndedEnabled' is set to false.</td>
+    </tr>
+
 </table>
 
 Callbacks
