@@ -81,7 +81,8 @@
             'collapseEmptyDivs': 'original',
             'targetPlatform': 'web',
             'enableSyncRendering': false,
-            'refreshExisting': true
+            'refreshExisting': true,
+            'customRenderEndedEnabled': true
         };
 
         // Merge options objects
@@ -121,8 +122,7 @@
             // get existing content
             var $existingContent = $adUnit.html();
 
-            // wipe html clean ready for ad and set the default display class.
-            $adUnit.html('').addClass('display-none');
+
 
             // Push commands to DFP to create ads
             window.googletag.cmd.push(function () {
@@ -167,42 +167,47 @@
                     });
                 }
 
-                // The following hijacks an internal google method to check if the div has been
-                // collapsed after the ad has been attempted to be loaded.
-                googleAdUnit.oldRenderEnded = googleAdUnit.oldRenderEnded || googleAdUnit.renderEnded;
-                googleAdUnit.renderEnded = function () {
+                if(dfpOptions.customRenderEndedEnabled === true) {
+                    // wipe html clean ready for ad and set the default display class.
+                    $adUnit.html('').addClass('display-none');
 
-                    rendered++;
+                    // The following hijacks an internal google method to check if the div has been
+                    // collapsed after the ad has been attempted to be loaded.
+                    googleAdUnit.oldRenderEnded = googleAdUnit.oldRenderEnded || googleAdUnit.renderEnded;
+                    googleAdUnit.renderEnded = function () {
 
-                    var display = $adUnit.css('display');
+                        rendered++;
 
-                    // if the div has been collapsed but there was existing content expand the
-                    // div and reinsert the existing content.
-                    if (display === 'none' && $.trim($existingContent).length > 0 && dfpOptions.collapseEmptyDivs === 'original') {
-                        $adUnit.show().html($existingContent);
-                        display = 'block display-original';
-                    }
+                        var display = $adUnit.css('display');
 
-                    if (typeof dfpOptions.beforeEachAdLoaded === 'function') {
-                        dfpOptions.beforeEachAdLoaded.call(this, $adUnit);
-                    } 
-                    $adUnit.removeClass('display-none').addClass('display-' + display);
+                        // if the div has been collapsed but there was existing content expand the
+                        // div and reinsert the existing content.
+                        if (display === 'none' && $.trim($existingContent).length > 0 && dfpOptions.collapseEmptyDivs === 'original') {
+                            $adUnit.show().html($existingContent);
+                            display = 'block display-original';
+                        }
 
-                    if( typeof(googleAdUnit.oldRenderEnded) !== "undefined") {
-                        googleAdUnit.oldRenderEnded();
-                    }
+                        if (typeof dfpOptions.beforeEachAdLoaded === 'function') {
+                            dfpOptions.beforeEachAdLoaded.call(this, $adUnit);
+                        } 
+                        $adUnit.removeClass('display-none').addClass('display-' + display);
 
-                    // Excute afterEachAdLoaded callback if provided
-                    if (typeof dfpOptions.afterEachAdLoaded === 'function') {
-                        dfpOptions.afterEachAdLoaded.call(this, $adUnit);
-                    }
+                        if( typeof(googleAdUnit.oldRenderEnded) !== "undefined") {
+                            googleAdUnit.oldRenderEnded();
+                        }
 
-                    // Excute afterAllAdsLoaded callback if provided
-                    if (typeof dfpOptions.afterAllAdsLoaded === 'function' && rendered === count) {
-                        dfpOptions.afterAllAdsLoaded.call(this, $adCollection);
-                    }
+                        // Excute afterEachAdLoaded callback if provided
+                        if (typeof dfpOptions.afterEachAdLoaded === 'function') {
+                            dfpOptions.afterEachAdLoaded.call(this, $adUnit);
+                        }
 
-                };
+                        // Excute afterAllAdsLoaded callback if provided
+                        if (typeof dfpOptions.afterAllAdsLoaded === 'function' && rendered === count) {
+                            dfpOptions.afterAllAdsLoaded.call(this, $adCollection);
+                        }
+
+                    };
+                }
 
                 // Store googleAdUnit reference
                 $adUnit.data(storeAs, googleAdUnit);
